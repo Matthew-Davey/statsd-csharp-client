@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>StatsD.HighPerformance</id>
+    <id>StatsdClient.HighPerformance</id>
     <version>$version$</version>
     <title>High Performance StatsD Client</title>
     <authors>Kyle West</authors>
