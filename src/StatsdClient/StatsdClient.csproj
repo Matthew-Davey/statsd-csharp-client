@@ -8,8 +8,8 @@
     <ProjectGuid>{77B1707A-9123-4CD9-9A18-A8D7F4794D71}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>StatsdClient</RootNamespace>
-    <AssemblyName>StatsdClient</AssemblyName>
+    <RootNamespace>StatsD.HighPerformance</RootNamespace>
+    <AssemblyName>StatsD.HighPerformance</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -63,12 +63,6 @@
     <Compile Include="StatsdUDP.cs" />
     <Compile Include="Stopwatch.cs" />
     <Compile Include="StopWatchFactory.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Configuration\StatsdClient.Configuration.csproj">
-      <Project>{11FB3391-9FA5-433B-A0C4-352BD770378F}</Project>
-      <Name>StatsdClient.Configuration</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

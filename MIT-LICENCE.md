@@ -1,4 +1,4 @@
-Copyright (c) 2012 Goncalo Pereira (github@goncalopereira.com) and all contributors 
+Copyright (c) 2015 Kyle West (kwest2123@yahoo.com) and all contributors 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

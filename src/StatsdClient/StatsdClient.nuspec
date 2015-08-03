@@ -1,20 +1,18 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>StatsdClient.ThreadSafe</id>
+    <id>StatsD.HighPerformance</id>
     <version>$version$</version>
-    <title>Thread-Safe Statsd C# Client</title>
+    <title>High Performance StatsD Client</title>
     <authors>Kyle West</authors>
     <owners>kyle2123</owners>
     <projectUrl>https://github.com/Kyle2123/statsd-csharp-client</projectUrl>
+    <licenseUrl>https://github.com/Kyle2123/statsd-csharp-client/MIT-LICENCE.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>StatsD client for C#. Fork of the StatsdClient project by darrellmozingo. Adds thread safety, multiple metrics per UDP packet, and aggregation.
+    <description>High Performance StatsD Client.  Supports client-side metric aggregation and multiple metrics per UDP packet.  Completely thread-safe.
     </description>
-    <releaseNotes>Initial release.</releaseNotes>
+    <releaseNotes></releaseNotes>
     <copyright>Copyright 2015</copyright>
-    <tags>stats statsd</tags>
+    <tags>stats statsd metrics aggregation</tags>
   </metadata>
-  <files>
-    <file src="..\Configuration\bin\Release\StatsdClient.Configuration.dll" target="lib\net40" /> 
-  </files>
 </package>

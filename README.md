@@ -1,17 +1,31 @@
-C# Statsd Client
-================
+High Performance StatsD Client
+==============================
+
+A high performance StatsD client.  Increases performance over other clients with these key features:
+
+**Metric Buffering**
+Multiple metrics are bundled together into a single UDP packet.  This means fewer packets are sent to the server.
+
+**Metric Aggregation**
+When possible, metrics are aggregated in the client before sending to the server.  For example, if a counter is increased by 1 three times in quick succession, the client will only report the metric to the server once, with a value of 3.
+
+**Thread-Safe**
+The client is completely thread safe.  An unlimited number of worker threads in your application can all report metrics through the same instance of the client.
+
+**Non-Blocking**
+The client is non-blocking, so reporting a metric always returns immediately, without slowing down your application.
+
+**Consumer/Producer Pattern**
+The client uses a configurable thread pool of consumer worker threads to bundle up metrics and send them to the server.  In most cases a single worker thread is plenty, but if your application sends a high volume of metrics, simply change the configuration to use a higher number of workers.
 
 Installation
 ------------
 
-You can [get the "StatsdClient" package on nuget](http://nuget.org/packages/StatsdClient).
-Or you can get the source from here on Github and build it.
+Can be found on Nuget with the ID of StatsD.HighPerformance
+
 
 Usage
-------
-
-Via the static Metrics class:
------------------------------
+-----
 
 At start of your app, configure the `Metrics` class like this:
 
@@ -19,15 +33,16 @@ At start of your app, configure the `Metrics` class like this:
 var metricsConfig = new MetricsConfig
 {
   StatsdServerName = "host.name",
-  Prefix = "myApp"
+  Prefix = "myApp",
+  StatsdMaxUDPPacketSize = 512 // Optional, defaults to 512
 };
 
 StatsdClient.Metrics.Configure(metricsConfig);
 ```
 
-Where "host.name" is the name of the statsd server and "myApp" is an optional prefix that is prepended on all stats. How you set it up is up to you, but we read the server name and other settings from web.config and and generate a prefix out of the environment (e.g. "Local", "Uat" or "Live"), plus the app name and machine name, separated with dots.
+Where *host.name* is the name of the statsd server and *myApp* is an optional prefix that is prepended onto the names of all metrics sent to the server.
 
-Use it like this afterwards:
+Use it like this:
 
 ``` C#
 Metrics.Counter("stat-name");
@@ -62,35 +77,33 @@ with a timed `Func<T>` that returns the same value
 var result = Metrics.Time(() => GetResult(), "stat-name");
 ```
 
-Via the Statsd class:
----------------------
+Advanced Configuration
+----------------------
+| Configuration Option | Default Value | Description                                                                                                                                                                                                                                                                                                                                      |
+|----------------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| MaxSendDelayMS       | 5000          | Maximum amount of time (in milliseconds), to wait for additional metrics to be sent before bundling up the metrics and sending them to the server.  It is important that this value is always smaller than the flush interval.                                                                                                                   |
+| MaxThreads           | 1             | Number of worker threads that will be used to send metrics to StatsD.  In very high volume use cases, a single worker thread may not be able to keep up with all of the metrics to be sent.  In that case, the number of threads can be increased with this option.  In most cases, the default value of one worker thread should be sufficient. |
 
-``` C#
-// NB: StatsdUDP is IDisposable and if not disposed, will leak resources
-StatsdUDP udp = new StatsdUDP(HOSTNAME, PORT);
-using (udp)
-{
-  Statsd s = new Statsd(new Statsd.Configuration() { Udp = udp });
 
-  //All the standard Statsd message types:
-  s.Send<Statsd.Counting>("stat-name", 1); //counter had one hit
-  s.Send<Statsd.Timing>("stat-name", 5); //timer had one hit of 5ms
-  s.Send<Statsd.Gauge>("stat-name", 5); //gauge had one hit of value 5
-  
-  //All types have sample rate, which will be included in the message for Statsd's own stats crunching:
-  s.Send<Statsd.Counting>("stat-name", 1, 1/10); //counter had one hit, this will be sent 10% of times it is called
- 
-  //Optional naming conventions:
-  // environment named 'env'
-  // application named 'app'
-  // hostname named 'host'
+To configure these options, create an instance of the *ThreadSafeConsumerProducerSender* class using the appropriate configuration options, and use it as the value for the *Sender* property in your MetricsConfig object.
 
-  string name = Naming.withEnvironmentApplicationAndHostname("stat"); //== "env.app.stat.host"
-  string anotherName  = Naming.withEnvironmentAndApplication("stat"); //== "env.app.stat"
+    var metricsConfig = new MetricsConfig
+    {
+      StatsdServerName = "host.name",
+      Prefix = "myApp",
+      Sender = new ThreadSafeConsumerProducerSender(
+        new ThreadSafeConsumerProducerSender.Configuration() { 
+          MaxSendDelayMS = 5000,
+          MaxThreads = 3
+    };
+    Metrics.Configure(metricsConfig);
 
-  //You can also use Actions to easily time responses:
+Credits
+--------
+This project is forked from Goncalo Pereira's [original Statsd client](https://github.com/goncalopereira/statsd-csharp-client).
 
-  s.Send(() => DoMagic(), "stat-name", 1/10); //log the response time for DoMagic call as a timer
-  s.Send(() => DoMagic(), "stat-name"); //same with no sample rate
-}
-```
+Copyright (c) 2012 Goncalo Pereira and all contributors. See MIT-LICENCE.md for further details.
+
+Thanks to Goncalo Pereira, Anthony Steele, Darrell Mozingo, Antony Denyer, and Tim Skauge for their contributions to the original client.
+
+Ideas for client-side metric aggregation are based on [Hulu's Bank project](http://tech.hulu.com/blog/2013/07/09/bank-an-open-source-statsdmetricsd-aggregation-frontend/)
