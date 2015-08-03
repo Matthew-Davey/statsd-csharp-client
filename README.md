@@ -21,7 +21,7 @@ The client uses a configurable thread pool of consumer worker threads to bundle 
 Installation
 ------------
 
-Can be found on Nuget with the ID of StatsD.HighPerformance
+Can be found on Nuget with the ID of [StatsdClient.HighPerformance](https://www.nuget.org/packages/StatsdClient.HighPerformance)
 
 
 Usage
