@@ -7,7 +7,7 @@
     <authors>Kyle West</authors>
     <owners>kyle2123</owners>
     <projectUrl>https://github.com/Kyle2123/statsd-csharp-client</projectUrl>
-    <licenseUrl>https://github.com/Kyle2123/statsd-csharp-client/MIT-LICENCE.md</licenseUrl>
+    <licenseUrl>https://github.com/Kyle2123/statsd-csharp-client/blob/master/MIT-LICENCE.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>High Performance StatsD Client.  Supports client-side metric aggregation and multiple metrics per UDP packet.  Completely thread-safe.
     </description>
