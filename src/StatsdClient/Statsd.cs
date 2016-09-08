@@ -24,7 +24,7 @@ namespace StatsdClient
 
             if(config.RandomGenerator == null)
                 config.RandomGenerator = new RandomGenerator();
-            if(config.StopwatchFactory == null)
+            if (config.StopwatchFactory == null)
                 config.StopwatchFactory = new StopWatchFactory();
             if (config.Prefix == null)
                 config.Prefix = string.Empty;
@@ -80,6 +80,12 @@ namespace StatsdClient
             if (!String.IsNullOrWhiteSpace(_config.Prefix))
                 statName = String.Format("{0}.{1}", _config.Prefix, statName);
 
+            if (_config.GlobalTags != null)
+            {
+                statName = _config.GlobalTags
+                    .Aggregate(statName, (stat, tag) => String.Format("{0},{1}={2}", stat, tag.Key, tag.Value));
+            }
+
             if (tags != null)
             {
                 statName = AnonymousToDictionary(tags)
@@ -106,6 +112,7 @@ namespace StatsdClient
             public IRandomGenerator RandomGenerator { get; set; }
             public ISender Sender { get; set; }
             public string Prefix { get; set; }
+            public IDictionary<string, object> GlobalTags { get; set; }
         }
 
         #region Backward Compatibility

@@ -36,7 +36,7 @@ namespace StatsdClient
             if (!string.IsNullOrEmpty(config.StatsdServerName))
             {
                 _statsdUdp = new StatsdUDP(config.StatsdServerName, config.StatsdServerPort, config.StatsdMaxUDPPacketSize);
-                _statsD = new Statsd(new Statsd.Configuration() { Udp = _statsdUdp, Sender = config.Sender, Prefix = _prefix });
+                _statsD = new Statsd(new Statsd.Configuration() { Udp = _statsdUdp, Sender = config.Sender, Prefix = _prefix, GlobalTags = config.GlobalTags });
             }
         }
 

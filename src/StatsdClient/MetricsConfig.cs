@@ -1,4 +1,6 @@
 ﻿using StatsdClient.Senders;
+using System.Collections.Generic;
+
 namespace StatsdClient
 {
     public class MetricsConfig
@@ -29,6 +31,11 @@ namespace StatsdClient
         /// </summary>
         public ISender Sender { get; set; }
 
+        /// <summary>
+        /// Allows you to configure global tags which are appended to each metric.
+        /// </summary>
+        public IDictionary<string, object> GlobalTags { get; set; }
+
         public const int DefaultStatsdServerPort = 8125;
         public const int DefaultStatsdMaxUDPPacketSize = 512;
 
@@ -37,6 +44,7 @@ namespace StatsdClient
             StatsdServerPort = DefaultStatsdServerPort;
             StatsdMaxUDPPacketSize = DefaultStatsdMaxUDPPacketSize;
             Sender = null;
+            GlobalTags = new Dictionary<string, object>();
         }
     }
 }
