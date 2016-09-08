@@ -1,5 +1,8 @@
 ﻿using StatsdClient.MetricTypes;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace StatsdClient
 {
@@ -33,56 +36,46 @@ namespace StatsdClient
             if (!string.IsNullOrEmpty(config.StatsdServerName))
             {
                 _statsdUdp = new StatsdUDP(config.StatsdServerName, config.StatsdServerPort, config.StatsdMaxUDPPacketSize);
-                _statsD = new Statsd(new Statsd.Configuration() { Udp = _statsdUdp, Sender = config.Sender });
+                _statsD = new Statsd(new Statsd.Configuration() { Udp = _statsdUdp, Sender = config.Sender, Prefix = _prefix });
             }
         }
 
-        public static void Counter(string statName, int value = 1, double sampleRate = 1)
+        public static void Counter(string statName, int value = 1, object tags = null, double sampleRate = 1)
         {
-            _statsD.Send<Counting>(BuildNamespacedStatName(statName), value, sampleRate);
+            _statsD.Send<Counting>(statName, value, sampleRate, tags);
         }
 
-        public static void Gauge(string statName, double value)
+        public static void Gauge(string statName, double value, object tags = null)
         {
-            _statsD.Send<Gauge>(BuildNamespacedStatName(statName), value);
+            _statsD.Send<Gauge>(statName, value, tags);
         }
 
-        public static void Timer(string statName, int value, double sampleRate = 1)
+        public static void Timer(string statName, int value, object tags = null, double sampleRate = 1)
         {
-            _statsD.Send<Timing>(BuildNamespacedStatName(statName), value, sampleRate);
+            _statsD.Send<Timing>(statName, value, sampleRate, tags);
         }
 
-        public static IDisposable StartTimer(string name)
+        public static IDisposable StartTimer(string name, object tags = null)
         {
-            return new MetricsTimer(name);
+            return new MetricsTimer(name, tags);
         }
 
-        public static void Time(Action action, string statName, double sampleRate=1) 
+        public static void Time(Action action, string statName, object tags = null, double sampleRate = 1) 
         {
-            _statsD.Send(action, BuildNamespacedStatName(statName), sampleRate);
+            _statsD.Send(action, statName, sampleRate, tags);
         }
 
-        public static T Time<T>(Func<T> func, string statName)
+        public static T Time<T>(Func<T> func, string statName,  object tags = null)
         {
-            using (StartTimer(statName))
+            using (StartTimer(statName, tags))
             {
                 return func();
             }
         }
 
-        public static void Set(string statName, string value)
+        public static void Set(string statName, string value, object tags = null)
         {
-            _statsD.Send<Set>(BuildNamespacedStatName(statName), value);
-        }
-
-        private static string BuildNamespacedStatName(string statName)
-        {
-            if (string.IsNullOrEmpty(_prefix))
-            {
-                return statName;
-            }
-
-            return _prefix + "." + statName;
+            _statsD.Send<Set>(statName, value, tags);
         }
     }
 }

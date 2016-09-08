@@ -114,7 +114,7 @@ namespace Tests
             {
                 Metrics.Configure(_defaultMetricsConfig);
 
-                Metrics.Counter("counter", 10, 0.9999);
+                Metrics.Counter("counter", 10, sampleRate: 0.9999);
                 Assert.That(LastPacketMessageReceived(), Is.EqualTo("counter:10|c|@0.9999"));
             }
 
