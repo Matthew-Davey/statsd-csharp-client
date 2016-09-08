@@ -62,6 +62,17 @@ namespace Tests
             }
 
             [Test]
+            public void increases_counter_with_value_of_X_and_tags()
+            {
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send<Counting>("counter", 5, 0.1, new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("counter,tag1=1,tag2=2:5|c|@0.1"));
+            }
+
+            [Test]
             public void counting_exception_fails_silently()
             {
                 var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
@@ -93,6 +104,17 @@ namespace Tests
                 IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
                 Assert.That(argsPerCall.Count, Is.EqualTo(1));
                 Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("timer:5|ms|@0.1"));
+            }
+
+            [Test]
+            public void timing_with_value_of_X_and_tags()
+            {
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send<Timing>("timer", 5, 0.1, new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("timer,tag1=1,tag2=2:5|ms|@0.1"));
             }
 
             [Test]
@@ -210,6 +232,24 @@ namespace Tests
             }
 
             [Test]
+            public void send_timer_with_lambda_and_tags_passes()
+            {
+                const string statName = "name";
+                var stopwatch = MockRepository.GenerateMock<IStopwatch>();
+                stopwatch.Stub(x => x.ElapsedMilliseconds()).Return(500);
+                _stopwatch.Stub(x => x.Get()).Return(stopwatch);
+                _randomGenerator = MockRepository.GenerateMock<IRandomGenerator>();
+                _randomGenerator.Stub(x => x.ShouldSend(Arg<double>.Is.Anything)).Return(true);
+
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send(() => TestMethod(), statName, 0.1, new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("name,tag1=1,tag2=2:500|ms"));
+            }
+
+            [Test]
             public void send_timer_with_lambda_and_sampleRate_fails()
             {
                 const string statName = "name";
@@ -221,6 +261,22 @@ namespace Tests
 
                 var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
                 s.Send(() => TestMethod(), statName, 0.1);
+
+                _sender.AssertWasNotCalled(x => x.Send(Arg<Metric>.Is.Anything));
+            }
+
+            [Test]
+            public void send_timer_with_lambda_and_tags_fails()
+            {
+                const string statName = "name";
+                var stopwatch = MockRepository.GenerateMock<IStopwatch>();
+                stopwatch.Stub(x => x.ElapsedMilliseconds()).Return(500);
+                _stopwatch.Stub(x => x.Get()).Return(stopwatch);
+                _randomGenerator = MockRepository.GenerateMock<IRandomGenerator>();
+                _randomGenerator.Stub(x => x.ShouldSend(Arg<double>.Is.Anything)).Return(false);
+
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send(() => TestMethod(), statName, 0.1, new { tag1 = 1, tag2 = "2" });
 
                 _sender.AssertWasNotCalled(x => x.Send(Arg<Metric>.Is.Anything));
             }
@@ -258,6 +314,17 @@ namespace Tests
             }
 
             [Test]
+            public void send_gauge_with_tags()
+            {
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send<Gauge>("gauge", 123.0, new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("gauge,tag1=1,tag2=2:123.000000000000000|g"));
+            }
+
+            [Test]
             public void gauge_exception_fails_silently()
             {
                 _udp.Stub(x => x.Send(Arg<string>.Is.Anything)).Throw(new Exception());
@@ -278,6 +345,17 @@ namespace Tests
                 IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
                 Assert.That(argsPerCall.Count, Is.EqualTo(1));
                 Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("meter:5|m"));
+            }
+
+            [Test]
+            public void send_meter_with_tags()
+            {
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send<StatsdClient.MetricTypes.Meter>("meter", 5, new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("meter,tag1=1,tag2=2:5|m"));
             }
 
             [Test]
@@ -305,6 +383,17 @@ namespace Tests
             }
 
             [Test]
+            public void sends_histogram_with_tags()
+            {
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send<StatsdClient.MetricTypes.Histogram>("histogram", 5, new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("histogram,tag1=1,tag2=2:5|h"));
+            }
+
+            [Test]
             public void histogram_exception_fails_silently()
             {
                 _udp.Stub(x => x.Send(Arg<string>.Is.Anything)).Throw(new Exception());
@@ -325,6 +414,17 @@ namespace Tests
                 IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
                 Assert.That(argsPerCall.Count, Is.EqualTo(1));
                 Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("set:34563478564785xyz|s"));
+            }
+
+            [Test]
+            public void sets_set_with_tags()
+            {
+                var s = new Statsd(new Statsd.Configuration() { Udp = _udp, RandomGenerator = _randomGenerator, StopwatchFactory = _stopwatch, Sender = _sender });
+                s.Send<StatsdClient.MetricTypes.Set>("set", "34563478564785xyz", new { tag1 = 1, tag2 = "2" });
+
+                IList<object[]> argsPerCall = _sender.GetArgumentsForCallsMadeOn(x => x.Send(Arg<Metric>.Is.Anything));
+                Assert.That(argsPerCall.Count, Is.EqualTo(1));
+                Assert.That(((Metric)argsPerCall[0][0]).Command, Is.EqualTo("set,tag1=1,tag2=2:34563478564785xyz|s"));
             }
 
             [Test]

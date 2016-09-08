@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using NUnit.Framework;
 using StatsdClient;
@@ -14,6 +15,7 @@ namespace Tests
         private const int _randomUnusedLocalPort = 23483;
         private const string _localhostAddress = "127.0.0.1";
         private MetricsConfig _defaultMetricsConfig;
+        private MetricsConfig _globalTagsMetricsConfig;
 
         const string _expectedTestPrefixRegex = @"test_prefix\.";
         const string _expectedTimeRegEx = @"time:.\\|ms";
@@ -38,6 +40,18 @@ namespace Tests
                 StatsdServerName = _localhostAddress,
                 StatsdServerPort = _randomUnusedLocalPort,
                 Sender = new ThreadSafeConsumerProducerSender(new ThreadSafeConsumerProducerSender.Configuration() { MaxSendDelayMS = 100 })
+            };
+
+            _globalTagsMetricsConfig = new MetricsConfig
+            {
+                StatsdServerName = _localhostAddress,
+                StatsdServerPort = _randomUnusedLocalPort,
+                Sender = new ThreadSafeConsumerProducerSender(new ThreadSafeConsumerProducerSender.Configuration() { MaxSendDelayMS = 100 }),
+                GlobalTags = new Dictionary<string, object>()
+                {
+                    { "global1", "g1" },
+                    { "global2", "g2" }
+                }
             };
 
             _listenThread = new Thread(_udpListener.Listen);
@@ -114,8 +128,35 @@ namespace Tests
             {
                 Metrics.Configure(_defaultMetricsConfig);
 
-                Metrics.Counter("counter", 10, 0.9999);
+                Metrics.Counter("counter", 10, sampleRate: 0.9999);
                 Assert.That(LastPacketMessageReceived(), Is.EqualTo("counter:10|c|@0.9999"));
+            }
+
+            [Test]
+            public void counter_with_tags()
+            {
+                Metrics.Configure(_defaultMetricsConfig);
+
+                Metrics.Counter("counter", tags: new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("counter,tag1=1,tag2=2:1|c"));
+            }
+
+            [Test]
+            public void counter_with_global_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Counter("counter");
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("counter,global1=g1,global2=g2:1|c"));
+            }
+
+            [Test]
+            public void counter_with_global_tags_and_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Counter("counter", tags: new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("counter,global1=g1,global2=g2,tag1=1,tag2=2:1|c"));
             }
 
             [Test]
@@ -160,6 +201,33 @@ namespace Tests
             }
 
             [Test]
+            public void timer_with_tags()
+            {
+                Metrics.Configure(_defaultMetricsConfig);
+
+                Metrics.Timer("timer", 6, new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("timer,tag1=1,tag2=2:6|ms"));
+            }
+
+            [Test]
+            public void timer_with_global_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Timer("timer", 6);
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("timer,global1=g1,global2=g2:6|ms"));
+            }
+
+            [Test]
+            public void timer_with_global_tags_and_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Timer("timer", 6, new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("timer,global1=g1,global2=g2,tag1=1,tag2=2:6|ms"));
+            }
+
+            [Test]
             public void timer_with_no_config_setup_should_not_send_metric()
             {
                 Metrics.Configure(new MetricsConfig());
@@ -198,6 +266,33 @@ namespace Tests
 
                 Metrics.Time(() => Thread.Sleep(2), "time");
                 Assert.That(LastPacketMessageReceived(), Is.StringMatching(_expectedTestPrefixRegex + _expectedTimeRegEx));
+            }
+
+            [Test]
+            public void time_with_tags()
+            {
+                Metrics.Configure(_defaultMetricsConfig);
+
+                Metrics.Time(() => Thread.Sleep(2), "time", new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.StringMatching(_expectedTestPrefixRegex + ",tag1=1,tag2=2" + _expectedTimeRegEx));
+            }
+
+            [Test]
+            public void time_with_global_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Time(() => Thread.Sleep(2), "time");
+                Assert.That(LastPacketMessageReceived(), Is.StringMatching(_expectedTestPrefixRegex + ",global1=g1,global2=g2" + _expectedTimeRegEx));
+            }
+
+            [Test]
+            public void time_with_global_tags_and_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Time(() => Thread.Sleep(2), "time", new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.StringMatching(_expectedTestPrefixRegex + ",global1=g1,global2=g2,tag1=1,tag2=2" + _expectedTimeRegEx));
             }
 
             [Test]
@@ -314,6 +409,33 @@ namespace Tests
             }
 
             [Test]
+            public void gauge_with_tags()
+            {
+                Metrics.Configure(_defaultMetricsConfig);
+
+                Metrics.Gauge("gauge", 3, new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("gauge,tag1=1,tag2=2:3.000000000000000|g"));
+            }
+
+            [Test]
+            public void gauge_with_global_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Gauge("gauge", 3);
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("gauge,global1=g1,global2=g2:3.000000000000000|g"));
+            }
+
+            [Test]
+            public void gauge_with_global_tags_and_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Gauge("gauge", 3, new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("gauge,global1=g1,global2=g2,tag1=1,tag2=2:3.000000000000000|g"));
+            }
+
+            [Test]
             public void gauge_with_no_config_setup_should_not_send_metric()
             {
                 Metrics.Configure(new MetricsConfig());
@@ -352,6 +474,33 @@ namespace Tests
 
                 Metrics.Set("timer", "value");
                 Assert.That(LastPacketMessageReceived(), Is.EqualTo("test_prefix.timer:value|s"));
+            }
+
+            [Test]
+            public void set_with_tags()
+            {
+                Metrics.Configure(_defaultMetricsConfig);
+
+                Metrics.Set("timer", "value", new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("timer,tag1=1,tag2=2:value|s"));
+            }
+
+            [Test]
+            public void set_with_global_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Set("timer", "value");
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("timer,global1=g1,global2=g2:value|s"));
+            }
+
+            [Test]
+            public void set_with_global_tags_and_tags()
+            {
+                Metrics.Configure(_globalTagsMetricsConfig);
+
+                Metrics.Set("timer", "value", new { tag1 = 1, tag2 = "2" });
+                Assert.That(LastPacketMessageReceived(), Is.EqualTo("timer,global1=g1,global2=g2,tag1=1,tag2=2:value|s"));
             }
 
             [Test]
