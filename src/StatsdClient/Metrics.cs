@@ -11,6 +11,7 @@ namespace StatsdClient
         private static IStatsd _statsD = new NullStatsd();
         private static StatsdUDP _statsdUdp;
         private static string _prefix;
+        private static Stack<TagScope> _tagScopes = new Stack<TagScope>();
 
         public static void Configure(MetricsConfig config)
         {
@@ -36,7 +37,7 @@ namespace StatsdClient
             if (!string.IsNullOrEmpty(config.StatsdServerName))
             {
                 _statsdUdp = new StatsdUDP(config.StatsdServerName, config.StatsdServerPort, config.StatsdMaxUDPPacketSize);
-                _statsD = new Statsd(new Statsd.Configuration() { Udp = _statsdUdp, Sender = config.Sender, Prefix = _prefix, GlobalTags = config.GlobalTags });
+                _statsD = new Statsd(new Statsd.Configuration() { Udp = _statsdUdp, Sender = config.Sender, Prefix = _prefix, GlobalTags = config.GlobalTags, TagScopes = _tagScopes });
             }
         }
 
@@ -76,6 +77,13 @@ namespace StatsdClient
         public static void Set(string statName, string value, object tags = null)
         {
             _statsD.Send<Set>(statName, value, tags);
+        }
+
+        public static IDisposable TagScope(object tags)
+        {
+            var scope = new TagScope(tags, () => _tagScopes.Pop());
+            _tagScopes.Push(scope);
+            return scope;
         }
     }
 }
