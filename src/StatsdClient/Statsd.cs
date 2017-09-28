@@ -86,6 +86,16 @@ namespace StatsdClient
                     .Aggregate(statName, (stat, tag) => String.Format("{0},{1}={2}", stat, tag.Key, tag.Value));
             }
 
+            if (_config.TagScopes != null && _config.TagScopes.Count > 0)
+            {
+                _config.TagScopes.ToList()
+                    .ForEach(scope =>
+                    {
+                        statName = AnonymousToDictionary(scope.Tags)
+                            .Aggregate(statName, (stat, tag) => String.Format("{0},{1}={2}", stat, tag.Key, tag.Value));
+                    });
+            }
+
             if (tags != null)
             {
                 statName = AnonymousToDictionary(tags)
@@ -113,6 +123,7 @@ namespace StatsdClient
             public ISender Sender { get; set; }
             public string Prefix { get; set; }
             public IDictionary<string, object> GlobalTags { get; set; }
+            public Stack<TagScope> TagScopes { get; set; }
         }
 
         #region Backward Compatibility
